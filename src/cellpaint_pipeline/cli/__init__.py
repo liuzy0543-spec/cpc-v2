@@ -8,7 +8,19 @@ because the test-suite patches them here.
 """
 from __future__ import annotations
 
-from cellpaint_pipeline.cli.app import COMMAND_HANDLERS, build_parser, main
+# cli.app does `from cellpaint_pipeline.cli import commands`, so importing it here while this module is still executing made cli and cli.app import each other. Upstream has no such cycle.  Resolving these three names on first access removes it and makes `import cellpaint_pipeline.cli` cheaper.
+_LAZY_APP = ('COMMAND_HANDLERS', 'build_parser', 'main')
+
+
+def __getattr__(name):  # PEP 562
+    if name in _LAZY_APP:
+        from cellpaint_pipeline.cli import app as _app
+        return getattr(_app, name)
+    raise AttributeError(name)
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_APP))
 # Re-exported because it was importable from the single-module cli and
 # tests patch it here; anything resolving a config through the CLI
 # facade would otherwise break.
