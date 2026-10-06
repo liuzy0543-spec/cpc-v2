@@ -20,6 +20,7 @@ from cellpaint_pipeline.public_api import (
     public_api_entrypoint_to_dict,
     run_public_api_entrypoint_to_dict,
 )
+from cellpaint_pipeline.registry import PLAN_KEYWORDS, REQUEST_KEYWORDS, pathlike_keywords
 from cellpaint_pipeline.skills import (
     available_pipeline_skills,
     get_pipeline_skill_definition,
@@ -289,26 +290,19 @@ def run_mcp_tool_to_dict(
 
 
 def _normalize_mcp_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    # The pathlike keyword set is shared with the public API layer, so both
+    # automation surfaces agree on what a filesystem path looks like.  This
+    # used to be a separate, shorter list maintained by hand.
     resolved = dict(kwargs)
-    for key in (
-        'output_dir',
-        'workflow_root',
-        'export_root',
-        'project_root',
-        'image_csv_path',
-        'nuclei_csv_path',
-        'load_data_csv_path',
-        'manifest_path',
-        'object_table_path',
-    ):
+    for key in pathlike_keywords():
         value = resolved.get(key)
         if isinstance(value, str) and value.strip():
             resolved[key] = Path(value).expanduser().resolve()
-    for key in ('data_request', 'request'):
+    for key in REQUEST_KEYWORDS:
         value = resolved.get(key)
         if isinstance(value, dict):
             resolved[key] = build_data_request(**value)
-    for key in ('download_plan', 'plan'):
+    for key in PLAN_KEYWORDS:
         value = resolved.get(key)
         if isinstance(value, (str, Path)):
             resolved[key] = load_download_plan(Path(value).expanduser().resolve())

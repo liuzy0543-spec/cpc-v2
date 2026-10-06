@@ -42,8 +42,8 @@
     "use_unsigned": true,
     "default_dataset_id": "cpg0016-jump",
     "default_source_id": "source_4",
-    "data_cache_root": "../demo/workspace/cache/data",
-    "index_cache_root": "../demo/workspace/cache/index",
+    "data_cache_root": "cache/data",
+    "index_cache_root": "cache/index",
     "preferred_packages": [
       "boto3",
       "cpgdata",

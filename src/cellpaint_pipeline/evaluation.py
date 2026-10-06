@@ -4,17 +4,51 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import StandardScaler
+from typing import TYPE_CHECKING, Any
 
 from cellpaint_pipeline.config import ProjectConfig
 
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    import pandas as pd
+
 SAMPLE_ID_COL = "Metadata_PlateWell"
+
+_MISSING_DEPENDENCY_MESSAGE = (
+    'The native evaluation step requires pandas, numpy, scikit-learn and '
+    'matplotlib in the active CellPainting-Claw runtime.'
+)
+
+
+def _load_runtime() -> tuple[Any, Any, Any, Any, Any, Any]:
+    """Import the scientific stack on demand.
+
+    Every other module in this package imports pandas / numpy / matplotlib
+    inside the function that needs them and reports a missing dependency with a
+    ``RuntimeError``.  Doing the same here means ``import
+    cellpaint_pipeline.evaluation`` succeeds in a runtime that only wants the
+    config helpers, and it also keeps matplotlib's backend selection under this
+    module's own control instead of depending on import order.
+    """
+    try:
+        import matplotlib
+        import numpy as np
+        import pandas as pd
+        from sklearn.decomposition import PCA
+        from sklearn.metrics import pairwise_distances
+        from sklearn.preprocessing import StandardScaler
+    except ImportError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(_MISSING_DEPENDENCY_MESSAGE) from exc
+
+    # Headless rendering must be selected before pyplot is imported, otherwise
+    # an earlier import of this module could leave an interactive backend
+    # active.  ``use`` is a no-op-safe call when the backend is already set.
+    try:
+        matplotlib.use('Agg')
+    except Exception:  # pragma: no cover - backend already fixed
+        pass
+    import matplotlib.pyplot as plt
+
+    return plt, np, pd, PCA, pairwise_distances, StandardScaler
 
 
 @dataclass(frozen=True)
@@ -57,6 +91,7 @@ def run_native_evaluation(
     feature_selected_path: Path | None = None,
     annotated_path: Path | None = None,
 ) -> NativeEvaluationResult:
+    _, _, pd, _, _, _ = _load_runtime()
     paths = resolve_evaluation_paths(
         config,
         output_dir=output_dir,
@@ -114,6 +149,7 @@ def get_feature_columns(df: pd.DataFrame) -> list[str]:
 
 
 def build_joined_table(feature_selected: pd.DataFrame, annotated: pd.DataFrame) -> pd.DataFrame:
+    _, _, pd, _, _, _ = _load_runtime()
     meta_cols = [col for col in annotated.columns if col.startswith("Metadata_")]
     meta = annotated[meta_cols].copy()
     overlap_meta = [col for col in meta.columns if col in feature_selected.columns]
@@ -125,12 +161,14 @@ def build_joined_table(feature_selected: pd.DataFrame, annotated: pd.DataFrame) 
 
 
 def get_scaled_feature_df(joined: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    _, np, pd, _, _, StandardScaler = _load_runtime()
     scaler = StandardScaler()
     scaled = scaler.fit_transform(joined[feature_cols].to_numpy(dtype=float))
     return pd.DataFrame(scaled, columns=feature_cols, index=joined.index)
 
 
 def save_pca(joined: pd.DataFrame, scaled_features: pd.DataFrame, output_dir: Path) -> pd.DataFrame:
+    plt, np, pd, PCA, _, _ = _load_runtime()
     x_values = scaled_features.to_numpy(dtype=float)
     pca = PCA(n_components=min(5, x_values.shape[0], x_values.shape[1]), random_state=0)
     scores = pca.fit_transform(x_values)
@@ -180,6 +218,7 @@ def save_pca(joined: pd.DataFrame, scaled_features: pd.DataFrame, output_dir: Pa
 
 
 def save_correlation(joined: pd.DataFrame, feature_cols: list[str], output_dir: Path) -> pd.DataFrame:
+    plt, _, pd, _, _, _ = _load_runtime()
     profile_matrix = joined.set_index(SAMPLE_ID_COL)[feature_cols].T.corr(method="pearson")
     profile_matrix.to_csv(output_dir / "well_correlation_matrix.csv")
 
@@ -223,6 +262,7 @@ def save_control_deviation(
     scaled_features: pd.DataFrame,
     output_dir: Path,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    _, np, pd, _, pairwise_distances, _ = _load_runtime()
     control_mask = joined["Metadata_ControlType"].eq("negative_control")
     controls = joined.loc[control_mask].copy()
     treatments = joined.loc[~control_mask].copy()
@@ -276,6 +316,7 @@ def save_control_deviation(
 
 
 def save_nearest_neighbors(joined: pd.DataFrame, scaled_features: pd.DataFrame, output_dir: Path) -> pd.DataFrame:
+    _, np, pd, _, pairwise_distances, _ = _load_runtime()
     profiles = scaled_features.copy()
     profiles.index = joined[SAMPLE_ID_COL].to_numpy()
     dists = pairwise_distances(profiles, metric="cosine")
@@ -317,6 +358,7 @@ def write_summary(
     output_dir: Path,
     feature_selected_path: Path,
 ) -> None:
+    _, np, _, _, _, _ = _load_runtime()
     controls = pca_df[pca_df["Metadata_ControlType"] == "negative_control"]
     control_pc1_mean = float(controls["PC1"].mean()) if not controls.empty else np.nan
     control_pc2_mean = float(controls["PC2"].mean()) if not controls.empty else np.nan

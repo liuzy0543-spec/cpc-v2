@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import importlib.util
 import json
-import os
 import shutil
 import time
 import urllib.request
@@ -14,6 +13,7 @@ from typing import Any
 import tifffile
 
 from cellpaint_pipeline.config import ProjectConfig
+from cellpaint_pipeline.ports import build_pythonpath_env
 from cellpaint_pipeline.runner import run_command
 
 
@@ -374,10 +374,7 @@ def _build_deepprofiler_runtime_env(command: list[str]) -> dict[str, str] | None
         return None
 
     package_root = Path(str(origin)).expanduser().resolve().parents[1]
-    existing = os.environ.get('PYTHONPATH', '').strip()
-    if existing:
-        return {'PYTHONPATH': f'{package_root}{os.pathsep}{existing}'}
-    return {'PYTHONPATH': str(package_root)}
+    return build_pythonpath_env(package_root)
 
 
 def _ensure_deepprofiler_plugins_link(project_root: Path) -> None:

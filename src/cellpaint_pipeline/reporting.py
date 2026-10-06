@@ -6,10 +6,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from cellpaint_pipeline import __version__
+from cellpaint_pipeline.capabilities import (
+    available_native_profiling_keys,
+    available_native_segmentation_keys,
+    available_workflows,
+)
 from cellpaint_pipeline.config import ProjectConfig
-from cellpaint_pipeline.workflows.orchestration import available_workflows
-from cellpaint_pipeline.workflows.profiling import available_native_profiling_keys
-from cellpaint_pipeline.workflows.segmentation import available_native_segmentation_keys
 
 
 KNOWN_VALIDATION_ARTIFACTS = {

@@ -4,6 +4,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from cellpaint_pipeline.config import ProjectConfig
+
+# The native step catalogue lives in ``cellpaint_pipeline.capabilities`` so that
+# lower layers can read it without importing this module; re-exported here
+# because these names have always been importable from this path.
+from cellpaint_pipeline.capabilities import (
+    NATIVE_SEGMENTATION_KEYS as _NATIVE_SEGMENTATION_KEYS,
+)
+from cellpaint_pipeline.capabilities import (
+    available_native_segmentation_keys as _available_native_segmentation_keys,
+)
 from cellpaint_pipeline.runner import ExecutionResult, run_python_script
 from cellpaint_pipeline.segmentation_native import (
     NativeMaskExportPipelineResult,
@@ -41,13 +51,7 @@ SEGMENTATION_TASK_MAP = {
     "single-cell-crops-only": "extract-single-cell-crops",
 }
 
-NATIVE_SEGMENTATION_KEYS = [
-    "prepare-load-data",
-    "build-mask-export-pipeline",
-    "extract-single-cell-crops",
-    "generate-png-previews",
-    "generate-sample-previews",
-]
+NATIVE_SEGMENTATION_KEYS = _NATIVE_SEGMENTATION_KEYS
 
 
 def available_segmentation_scripts() -> list[str]:
@@ -59,7 +63,7 @@ def available_segmentation_tasks() -> list[str]:
 
 
 def available_native_segmentation_keys() -> list[str]:
-    return list(NATIVE_SEGMENTATION_KEYS)
+    return _available_native_segmentation_keys()
 
 
 def run_segmentation_script(

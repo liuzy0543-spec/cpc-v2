@@ -4,6 +4,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from cellpaint_pipeline.config import ProjectConfig
+
+# The native step catalogue lives in ``cellpaint_pipeline.capabilities`` so that
+# lower layers can read it without importing this module; re-exported here
+# because these names have always been importable from this path.
+from cellpaint_pipeline.capabilities import (
+    NATIVE_PROFILING_KEYS as _NATIVE_PROFILING_KEYS,
+)
+from cellpaint_pipeline.capabilities import (
+    available_native_profiling_keys as _available_native_profiling_keys,
+)
 from cellpaint_pipeline.profiling_native import (
     NativeManifestResult,
     NativePycytominerResult,
@@ -43,12 +53,7 @@ PROFILING_TASK_MAP = {
     'cellprofiler-only': 'run-official-cellprofiler',
 }
 
-NATIVE_PROFILING_KEYS = [
-    'build-image-manifest',
-    'validate-inputs',
-    'export-cellprofiler-to-singlecell',
-    'run-pycytominer',
-]
+NATIVE_PROFILING_KEYS = _NATIVE_PROFILING_KEYS
 
 
 def available_profiling_scripts() -> list[str]:
@@ -56,7 +61,7 @@ def available_profiling_scripts() -> list[str]:
 
 
 def available_native_profiling_keys() -> list[str]:
-    return list(NATIVE_PROFILING_KEYS)
+    return _available_native_profiling_keys()
 
 
 def available_profiling_tasks() -> list[str]:

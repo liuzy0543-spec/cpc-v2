@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-import os
-import re
 import shlex
-import subprocess
-from collections import deque
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
+
+from cellpaint_pipeline.errors import PipelineStepError
+from cellpaint_pipeline.ports import CommandRunnerPort, CommandSpec, SubprocessCommandRunner
+
+__all__ = [
+    'CommandExecutionError',
+    'DEFAULT_COMMAND_RUNNER',
+    'ExecutionResult',
+    'run_command',
+    'run_python_script',
+    'set_default_command_runner',
+]
 
 
 @dataclass(frozen=True)
@@ -19,8 +26,13 @@ class ExecutionResult:
     returncode: int
 
 
-class CommandExecutionError(RuntimeError):
-    """Raised when a subprocess-backed pipeline step cannot complete successfully."""
+class CommandExecutionError(PipelineStepError):
+    """Raised when a subprocess-backed pipeline step cannot complete successfully.
+
+    The constructor signature and the rendered message are unchanged; the class
+    now also inherits :class:`~cellpaint_pipeline.errors.PipelineError` so a
+    caller can catch every pipeline failure with one ``except`` clause.
+    """
 
     def __init__(
         self,
@@ -40,7 +52,8 @@ class CommandExecutionError(RuntimeError):
         self.returncode = returncode
         self.output_tail = list(output_tail or [])
         self.reason = reason
-        super().__init__(self._build_message())
+        PipelineStepError.__init__(self, self._build_message(), step_label=label,
+                                   reason=reason, details=list(self.output_tail))
 
     def _build_message(self) -> str:
         lines = []
@@ -57,6 +70,20 @@ class CommandExecutionError(RuntimeError):
             lines.append('Output tail:')
             lines.extend(self.output_tail)
         return '\n'.join(lines)
+
+
+# The process-execution port.  Swapping this out is the supported way to run
+# pipeline steps somewhere other than a local subprocess (for example inside a
+# container or a remote worker) without touching any workflow code.
+DEFAULT_COMMAND_RUNNER: CommandRunnerPort = SubprocessCommandRunner()
+
+
+def set_default_command_runner(runner: CommandRunnerPort) -> CommandRunnerPort:
+    """Install ``runner`` as the process-execution port and return the previous one."""
+    global DEFAULT_COMMAND_RUNNER
+    previous = DEFAULT_COMMAND_RUNNER
+    DEFAULT_COMMAND_RUNNER = runner
+    return previous
 
 
 def run_python_script(
@@ -91,70 +118,38 @@ def run_command(
     if cwd is not None and not cwd.exists():
         raise FileNotFoundError(f"Working directory not found: {cwd}")
 
-    execution_label = label or Path(command[0]).stem or 'run'
-
-    log_path = None
-    log_handle = None
-    if log_dir is not None:
-        log_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-        safe_label = re.sub(r'[^A-Za-z0-9._-]+', '_', execution_label).strip('_') or 'run'
-        log_path = log_dir / f'{timestamp}_{safe_label}.log'
-        log_handle = log_path.open('w', encoding='utf-8')
-
-    print(f"[cellpaint_pipeline] running: {shlex.join(command)}")
-    if cwd is not None:
-        print(f"[cellpaint_pipeline] cwd: {cwd}")
-    if log_path is not None:
-        print(f"[cellpaint_pipeline] log: {log_path}")
-
-    output_tail: deque[str] = deque(maxlen=20)
-    try:
-        try:
-            process = subprocess.Popen(
-                command,
-                cwd=str(cwd) if cwd else None,
-                env=({**os.environ, **env} if env else None),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
-        except OSError as exc:
-            raise CommandExecutionError(
-                label=execution_label,
-                command=command,
-                cwd=cwd,
-                log_path=log_path,
-                returncode=None,
-                reason=str(exc),
-            ) from exc
-
-        assert process.stdout is not None
-        for line in process.stdout:
-            print(line, end='')
-            output_tail.append(line.rstrip())
-            if log_handle is not None:
-                log_handle.write(line)
-        returncode = process.wait()
-    finally:
-        if log_handle is not None:
-            log_handle.close()
-
-    result = ExecutionResult(
-        label=execution_label,
-        command=command,
+    spec = CommandSpec(
+        argv=list(command),
         cwd=cwd,
-        log_path=log_path,
-        returncode=returncode,
+        env=dict(env) if env else None,
+        log_dir=log_dir,
+        label=label,
     )
-    if returncode != 0:
+    outcome = DEFAULT_COMMAND_RUNNER.run(spec)
+
+    if not outcome.started:
         raise CommandExecutionError(
-            label=execution_label,
+            label=label or Path(command[0]).stem or 'run',
             command=command,
             cwd=cwd,
-            log_path=log_path,
-            returncode=returncode,
-            output_tail=list(output_tail),
+            log_path=outcome.log_path,
+            returncode=None,
+            reason=outcome.start_error,
         )
-    return result
+    if outcome.returncode != 0:
+        raise CommandExecutionError(
+            label=label or Path(command[0]).stem or 'run',
+            command=command,
+            cwd=cwd,
+            log_path=outcome.log_path,
+            returncode=outcome.returncode,
+            output_tail=outcome.output_tail,
+        )
+
+    return ExecutionResult(
+        label=label or Path(command[0]).stem or 'run',
+        command=command,
+        cwd=cwd,
+        log_path=outcome.log_path,
+        returncode=outcome.returncode,
+    )

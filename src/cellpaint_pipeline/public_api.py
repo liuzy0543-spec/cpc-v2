@@ -6,6 +6,20 @@ from pathlib import Path
 from typing import Any
 
 from cellpaint_pipeline.config import ProjectConfig
+from cellpaint_pipeline.registry import (
+    ENTRYPOINT_REQUIRES_CONFIG as _ENTRYPOINT_REQUIRES_CONFIG,
+)
+from cellpaint_pipeline.registry import (
+    PATHLIKE_KEYWORDS as _PATHLIKE_KEYWORDS,
+)
+from cellpaint_pipeline.registry import (
+    PLAN_KEYWORDS,
+    REQUEST_KEYWORDS,
+    is_result_serialised_inline,
+    requires_config,
+    result_serialiser,
+    target_module,
+)
 
 
 class PublicApiContractError(ValueError):
@@ -127,36 +141,14 @@ PUBLIC_API_ENTRYPOINTS: dict[str, PublicApiEntry] = {
     ),
 }
 
-PUBLIC_API_REQUIRES_CONFIG = {
-    'summarize_data_access',
-    'build_download_plan',
-    'execute_download_plan',
-    'run_profiling_suite',
-    'run_segmentation_suite',
-    'run_end_to_end_pipeline',
-    'run_pipeline_preset',
-    'run_pipeline_skill',
-    'run_deepprofiler_pipeline',
-}
+#: Entrypoints that refuse to run without a :class:`ProjectConfig`.  The set
+#: itself lives in :mod:`cellpaint_pipeline.registry` so the public API layer
+#: and the MCP layer cannot drift apart; this name is kept because it is part
+#: of the published module surface.
+PUBLIC_API_REQUIRES_CONFIG = _ENTRYPOINT_REQUIRES_CONFIG
 
-PATHLIKE_KWARGS = {
-    'output_dir',
-    'workflow_root',
-    'export_root',
-    'project_root',
-    'image_csv_path',
-    'nuclei_csv_path',
-    'load_data_csv_path',
-    'manifest_path',
-    'object_table_path',
-    'single_cell_path',
-    'aggregated_path',
-    'annotated_path',
-    'normalized_path',
-    'feature_selected_path',
-    'single_cell_parquet_path',
-    'well_aggregated_parquet_path',
-}
+#: Keyword arguments that are resolved to absolute paths before dispatch.
+PATHLIKE_KWARGS = _PATHLIKE_KEYWORDS
 
 PUBLIC_API_OUTPUT_CONTRACTS: dict[str, dict[str, Any]] = {
     'summarize_data_access': {
@@ -476,7 +468,7 @@ def run_public_api_entrypoint(
         raise PublicApiContractError(
             f'Public API entrypoint {name} expected config to be a ProjectConfig, got {type(config).__name__}.'
         )
-    if name in PUBLIC_API_REQUIRES_CONFIG:
+    if requires_config(name):
         if config is None:
             raise PublicApiContractError(
                 f'Public API entrypoint {name} requires a ProjectConfig. '
@@ -506,13 +498,13 @@ def _normalize_public_api_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
         value = resolved.get(key)
         if isinstance(value, str) and value.strip():
             resolved[key] = Path(value).expanduser().resolve()
-    for key in ['request', 'data_request']:
+    for key in REQUEST_KEYWORDS:
         value = resolved.get(key)
         if isinstance(value, dict):
             from cellpaint_pipeline.data_access import build_data_request
 
             resolved[key] = build_data_request(**value)
-    for key in ['plan', 'download_plan']:
+    for key in PLAN_KEYWORDS:
         value = resolved.get(key)
         if isinstance(value, (str, Path)):
             from cellpaint_pipeline.data_access import load_download_plan
@@ -527,19 +519,7 @@ def _normalize_public_api_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _resolve_public_api_function(name: str) -> Any:
-    module_map = {
-        'summarize_data_access': 'cellpaint_pipeline.data_access',
-        'build_data_request': 'cellpaint_pipeline.data_access',
-        'build_download_plan': 'cellpaint_pipeline.data_access',
-        'execute_download_plan': 'cellpaint_pipeline.data_access',
-        'run_profiling_suite': 'cellpaint_pipeline.delivery',
-        'run_segmentation_suite': 'cellpaint_pipeline.delivery',
-        'run_end_to_end_pipeline': 'cellpaint_pipeline.orchestration',
-        'run_pipeline_preset': 'cellpaint_pipeline.presets',
-        'run_pipeline_skill': 'cellpaint_pipeline.skills',
-        'run_deepprofiler_pipeline': 'cellpaint_pipeline.deepprofiler_pipeline',
-    }
-    module_name = module_map.get(name)
+    module_name = target_module(name)
     if module_name is None:
         raise PublicApiContractError(f'No callable registered for public API entrypoint: {name}')
     module = import_module(module_name)
@@ -550,35 +530,10 @@ def _resolve_public_api_function(name: str) -> Any:
 
 
 def _public_api_result_to_dict(name: str, result: Any) -> dict[str, Any]:
-    if name == 'summarize_data_access':
-        from cellpaint_pipeline.data_access import data_access_summary_to_dict
-
-        return data_access_summary_to_dict(result)
-    if name == 'build_data_request':
-        from cellpaint_pipeline.data_access import data_request_to_dict
-
-        return data_request_to_dict(result)
-    if name == 'build_download_plan':
-        from cellpaint_pipeline.data_access import data_download_plan_to_dict
-
-        return data_download_plan_to_dict(result)
-    if name == 'execute_download_plan':
-        from cellpaint_pipeline.data_access import data_download_execution_result_to_dict
-
-        return data_download_execution_result_to_dict(result)
-    if name in {'run_end_to_end_pipeline', 'run_pipeline_preset'}:
-        from cellpaint_pipeline.orchestration import end_to_end_pipeline_result_to_dict
-
-        return end_to_end_pipeline_result_to_dict(result)
-    if name == 'run_pipeline_skill':
-        from cellpaint_pipeline.skills import pipeline_skill_result_to_dict
-
-        return pipeline_skill_result_to_dict(result)
-    if name == 'run_deepprofiler_pipeline':
-        from cellpaint_pipeline.deepprofiler_pipeline import deepprofiler_pipeline_result_to_dict
-
-        return deepprofiler_pipeline_result_to_dict(result)
-    if name in {'run_profiling_suite', 'run_segmentation_suite'}:
+    serialiser = result_serialiser(name)
+    if serialiser is not None:
+        return serialiser(result)
+    if is_result_serialised_inline(name):
         return {
             'implementation': 'cellpaint_pipeline.delivery',
             'suite_key': result.suite_key,

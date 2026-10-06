@@ -8,6 +8,7 @@ from pathlib import Path
 
 from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.cppipe import resolve_cppipe_selection
+from cellpaint_pipeline.ports import BaseDirFileLocator, FileLocatorPort, validate_local_files
 
 
 ARTICLE_PSEUDOCOLORS = {
@@ -168,7 +169,16 @@ class SegmentationSummaryResult:
 def prepare_segmentation_load_data_native(
     config: ProjectConfig,
     output_path: Path | None = None,
+    *,
+    source_base_dir: Path | None = None,
 ) -> NativeSegmentationLoadDataResult:
+    """Build the load-data table used by the segmentation pipeline.
+
+    ``source_base_dir`` only affects how the ``PathName_*`` columns of the
+    source table are turned into filesystem paths.  ``None`` keeps the
+    historical behaviour of resolving them against the process working
+    directory, so existing callers see no change.
+    """
     try:
         import pandas as pd
     except ImportError as exc:
@@ -187,7 +197,10 @@ def prepare_segmentation_load_data_native(
     if subset_df.empty:
         raise ValueError('The configured segmentation subset did not match any rows.')
 
-    _validate_local_files(subset_df)
+    _validate_local_files(
+        subset_df,
+        locator=BaseDirFileLocator(source_base_dir) if source_base_dir is not None else None,
+    )
 
     resolved_output_path.parent.mkdir(parents=True, exist_ok=True)
     subset_df.to_csv(resolved_output_path, index=False)
@@ -676,21 +689,16 @@ def _get_crop_output_dir(config: ProjectConfig, mode: str) -> Path:
     raise ValueError(f'Unsupported crop preview mode: {mode}')
 
 
-def _validate_local_files(dataframe) -> None:
-    missing: list[str] = []
-    file_columns = [column for column in dataframe.columns if column.startswith('FileName_')]
-    for file_column in file_columns:
-        path_column = file_column.replace('FileName_', 'PathName_')
-        if path_column not in dataframe.columns:
-            continue
-        pairs = dataframe[[file_column, path_column]].dropna().drop_duplicates()
-        for filename, pathname in pairs.itertuples(index=False):
-            path = Path(str(pathname)) / str(filename)
-            if not path.exists():
-                missing.append(str(path))
-    if missing:
-        preview = '\n'.join(missing[:10])
-        raise FileNotFoundError('Missing local files referenced by source LoadData. Examples:\n' + preview)
+def _validate_local_files(dataframe, *, locator: FileLocatorPort | None = None) -> None:
+    """Check that every file referenced by the load-data table exists.
+
+    ``locator`` decides how a ``PathName_*`` entry becomes a concrete path.
+    The default keeps the historical behaviour of resolving against the
+    process working directory; pass a
+    :class:`~cellpaint_pipeline.ports.BaseDirFileLocator` to make the base
+    directory explicit instead of implicit.
+    """
+    validate_local_files(dataframe, locator=locator)
 
 
 def _centered_crop_bounds(center: float, full_size: int, crop_size: int) -> tuple[int, int, int, int]:
