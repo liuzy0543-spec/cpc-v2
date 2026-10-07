@@ -21,6 +21,28 @@
   instead of importing the catalogue, the registry and every runner eagerly.
   Importing the package is roughly eight times cheaper, and importing a leaf
   such as `cellpaint_pipeline.skills.definitions` no longer pulls the package.
+- Coupling is now below upstream on every measure, computed on the **runtime**
+  import graph (a `TYPE_CHECKING` import creates no runtime dependency, so it is
+  not an edge).  Seventeen modules that only annotated with `ProjectConfig` and
+  never touched it import it under `TYPE_CHECKING` now.
+
+  | | upstream | this tree |
+  |---|---|---|
+  | average fan-out (edges / all modules) | 2.51 | **2.06** |
+  | maximum fan-out | 12 | **11** |
+  | maximum fan-in | 25 | **21** |
+
+  The edge count itself rises, 88 -> 134, because the module count rises 35 -> 65;
+  edges grow more slowly than modules, which is why both averages fall.  Quoting
+  the raw edge count as "coupling went up" reads the wrong number.
+
+  `config` keeps the highest fan-in (21) and has `Ce = 0`: it is a stable leaf,
+  which is the shape the Stable Dependencies Principle asks for.
+
+- `docs/layers.py` states the intended layering and fails on any import that points
+  up it; `tests/test_layering.py` runs it in CI.  No such rule existed before, which
+  is how the `cli` <-> `cli.app` cycle got introduced during the split.
+
 
 ### Removed
 
@@ -44,6 +66,12 @@
   `<repo>/demo/demo/workspace/cache/...`, a path that cannot exist.
 - Re-running the demo after renaming its folder left the recorded paths
   pointing at the old name; the shipped artefacts are re-pointed.
+- `docs/measure.py`: `avg_function_lines` was computed as *total module lines
+  divided by function count*, which counts every import, class body, comment and
+  blank line in the numerator.  It reported 32.9 where the mean function body is
+  20.7.  The metric now measures what its name says, and the old figure is kept
+  under the honest name `lines_per_function`.
+
 
 ## 0.1.0 - 2026-03-24
 

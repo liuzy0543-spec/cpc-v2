@@ -68,7 +68,11 @@ def measure(root: Path) -> dict:
         "files": len(files),
         "lines": lines,
         "functions": len(functions),
-        "avg_function_lines": round(lines / len(functions), 1),
+        "avg_function_lines": round(sum(f[0] for f in functions) / len(functions), 1),
+        # NOT the same thing: total module lines divided by function count.  The
+        # two differ a lot (20.7 vs 32.9) because every import, class body, comment
+        # and blank line lands in the numerator of this one.
+        "lines_per_function": round(lines / len(functions), 1),
         "longest_function": {"name": longest[2], "file": longest[1], "lines": longest[0]},
         "largest_file": {"file": biggest[0].name, "lines": biggest[1]},
         "files_over_400_lines": sum(1 for v in sizes.values() if v > 400),
