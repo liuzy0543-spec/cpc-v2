@@ -2,6 +2,26 @@
 
 ## Unreleased - modular refactor line
 
+### Added
+
+- `demo/backend/profiling_backend/scripts/07_run_official_cellprofiler.py`.  `cp-extract-measurements`
+  shells out to this script, and upstream does not ship it, so the skill always took
+  its FileNotFoundError branch and reused the bundled measurement tables while
+  returning `ok: true` with `mode: bundled-demo-outputs` buried in `details`.  Those tables hold
+  four rows, so the classical branch had never run at dataset scale and the
+  degradation was invisible from outside.
+
+  The script follows `segmentation_backend/scripts/03_run_mask_export.py`: it absolutises
+  the load-data table, resizes each illumination array to its raw image's shape,
+  and runs the analysis pipeline.  The demo's `load_data_with_illum.csv` carries only
+  the 19 `Orig*` columns, so when the `Illum*` columns are absent they are built
+  from the illumination library that ships with the segmentation backend.
+
+  Measured on the shipped demo: `Image.csv` 96 B -> 114,431 B, `Cells.csv` 535 B ->
+  206,278 B, `Nuclei.csv` 159 B -> 179,205 B, and `Cytoplasm.csv` appears where it
+  previously did not exist.  `details.mode` is now `None`.
+
+
 ### Changed
 
 - `cellpaint_pipeline/skills.py` (1646 lines) and `cellpaint_pipeline/cli.py`
