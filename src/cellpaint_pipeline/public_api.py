@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.registry import (
     ENTRYPOINT_REQUIRES_CONFIG as _ENTRYPOINT_REQUIRES_CONFIG,
 )
@@ -20,6 +19,10 @@ from cellpaint_pipeline.registry import (
     result_serialiser,
     target_module,
 )
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 class PublicApiContractError(ValueError):

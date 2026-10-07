@@ -5,8 +5,11 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from cellpaint_pipeline.config import ProjectConfig
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 IMAGE_CHANNELS = {

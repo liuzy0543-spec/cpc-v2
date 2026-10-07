@@ -6,9 +6,13 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.cppipe import resolve_cppipe_selection
 from cellpaint_pipeline.ports import BaseDirFileLocator, FileLocatorPort, validate_local_files
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 ARTICLE_PSEUDOCOLORS = {

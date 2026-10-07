@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from cellpaint_pipeline.config import ConfigContractError, ProjectConfig
+from cellpaint_pipeline.config import ConfigContractError
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 CppipeKind = Literal['profiling', 'segmentation']

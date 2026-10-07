@@ -12,7 +12,6 @@ from cellpaint_pipeline.adapters.deepprofiler import infer_deepprofiler_sources_
 from cellpaint_pipeline.adapters.deepprofiler_features import collect_deepprofiler_features
 from cellpaint_pipeline.adapters.deepprofiler_project import build_deepprofiler_project
 from cellpaint_pipeline.adapters.deepprofiler_project import run_deepprofiler_profile
-from cellpaint_pipeline.config import ProjectConfig
 
 # The workflow catalogue lives in ``cellpaint_pipeline.capabilities`` so that
 # lower layers (the validation report) can read it without importing this
@@ -26,6 +25,8 @@ from cellpaint_pipeline.runner import CommandExecutionError, ExecutionResult
 from cellpaint_pipeline.segmentation_native import summarize_segmentation_outputs, write_segmentation_summary
 from cellpaint_pipeline.workflows.profiling import run_profiling_native, run_profiling_task
 from cellpaint_pipeline.workflows.segmentation import run_segmentation_native, run_segmentation_script, run_segmentation_task
+from typing import TYPE_CHECKING
+from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

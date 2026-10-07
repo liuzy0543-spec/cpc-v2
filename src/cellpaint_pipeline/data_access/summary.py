@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.data_access.access_packages import (
     CPGDataPrefixListResult,
     QuiltPackageListResult,
@@ -21,6 +20,10 @@ from cellpaint_pipeline.data_access.gallery import (
     list_gallery_datasets,
     list_gallery_sources,
 )
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

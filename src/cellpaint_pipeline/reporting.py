@@ -11,7 +11,11 @@ from cellpaint_pipeline.capabilities import (
     available_native_segmentation_keys,
     available_workflows,
 )
-from cellpaint_pipeline.config import ProjectConfig
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 KNOWN_VALIDATION_ARTIFACTS = {

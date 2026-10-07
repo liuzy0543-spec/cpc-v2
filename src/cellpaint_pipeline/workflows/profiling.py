@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from cellpaint_pipeline.config import ProjectConfig
 
 # The native step catalogue lives in ``cellpaint_pipeline.capabilities`` so that
 # lower layers can read it without importing this module; re-exported here
@@ -25,6 +24,11 @@ from cellpaint_pipeline.profiling_native import (
     validate_inputs_native,
 )
 from cellpaint_pipeline.runner import ExecutionResult, run_python_script
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

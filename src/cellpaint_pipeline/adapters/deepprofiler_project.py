@@ -8,13 +8,16 @@ import time
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import tifffile
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.ports import build_pythonpath_env
 from cellpaint_pipeline.runner import run_command
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 CHANNEL_METADATA_MAP = {

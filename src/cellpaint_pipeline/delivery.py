@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from cellpaint_pipeline import __version__
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.reporting import build_validation_report_payload
 from cellpaint_pipeline.workflows.orchestration import WorkflowExecutionError, WorkflowResult, run_workflow
+from typing import TYPE_CHECKING
+from cellpaint_pipeline.config import ProjectConfig
 
 
 PROFILING_SUITE_WORKFLOWS = {

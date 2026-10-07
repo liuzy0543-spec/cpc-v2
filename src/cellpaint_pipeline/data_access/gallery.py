@@ -6,9 +6,13 @@ import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import DataAccessConfig, ProjectConfig
+from cellpaint_pipeline.config import DataAccessConfig
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

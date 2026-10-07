@@ -24,7 +24,6 @@ def __dir__():
 # Re-exported because it was importable from the single-module cli and
 # tests patch it here; anything resolving a config through the CLI
 # facade would otherwise break.
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.cli.helpers import (
     _normalize_extra_args,
     _resolve_deepprofiler_source_kwargs,
@@ -35,6 +34,11 @@ from cellpaint_pipeline.cli.helpers import (
 )
 from cellpaint_pipeline.cli.lazy import *  # noqa: F401,F403
 from cellpaint_pipeline.cli.lazy import _LazyCallable, _lazy
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 __all__ = [
     'ProjectConfig',

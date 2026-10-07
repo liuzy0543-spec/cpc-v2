@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.data_access import DataDownloadPlan, DataRequest
 from cellpaint_pipeline.orchestration import EndToEndPipelineResult, run_end_to_end_pipeline
+from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

@@ -5,9 +5,11 @@ import io
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from cellpaint_pipeline.config import ProjectConfig
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

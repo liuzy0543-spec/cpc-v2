@@ -9,7 +9,11 @@ from cellpaint_pipeline.adapters.deepprofiler import infer_deepprofiler_sources_
 from cellpaint_pipeline.adapters.deepprofiler_features import collect_deepprofiler_features
 from cellpaint_pipeline.adapters.deepprofiler_project import build_deepprofiler_project
 from cellpaint_pipeline.adapters.deepprofiler_project import run_deepprofiler_profile
-from cellpaint_pipeline.config import ProjectConfig
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

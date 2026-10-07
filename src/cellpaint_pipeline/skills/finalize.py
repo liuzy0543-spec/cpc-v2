@@ -6,15 +6,18 @@ import json
 from dataclasses import asdict, is_dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.runner import ExecutionResult
 from cellpaint_pipeline.skills.context import SkillRuntimeContext
 from cellpaint_pipeline.skills.definitions import (
     PipelineSkillResult,
     pipeline_skill_definition_to_dict,
 )
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 def _finalize_skill_result(

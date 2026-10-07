@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.data_access import build_data_request, load_download_plan
 from cellpaint_pipeline.orchestration import end_to_end_pipeline_result_to_dict
 from cellpaint_pipeline.presets import (
@@ -28,6 +27,7 @@ from cellpaint_pipeline.skills import (
     pipeline_skill_result_to_dict,
     run_pipeline_skill,
 )
+from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

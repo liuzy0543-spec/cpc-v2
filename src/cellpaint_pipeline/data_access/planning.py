@@ -3,9 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.data_access.gallery import (
     GalleryDownloadResult,
     build_gallery_source_prefix,
@@ -14,6 +13,10 @@ from cellpaint_pipeline.data_access.gallery import (
     gallery_download_result_to_dict,
 )
 from cellpaint_pipeline.data_access.summary import DataAccessSummaryResult, summarize_data_access
+
+
+if TYPE_CHECKING:
+    from cellpaint_pipeline.config import ProjectConfig
 
 
 @dataclass(frozen=True)

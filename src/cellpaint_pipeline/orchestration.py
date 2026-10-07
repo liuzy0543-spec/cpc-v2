@@ -4,10 +4,9 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from cellpaint_pipeline import __version__
-from cellpaint_pipeline.config import ProjectConfig
 from cellpaint_pipeline.data_access import (
     DataAccessSummaryResult,
     DataDownloadExecutionResult,
@@ -28,6 +27,7 @@ from cellpaint_pipeline.delivery import (
     run_segmentation_suite,
 )
 from cellpaint_pipeline.reporting import build_validation_report_payload
+from cellpaint_pipeline.config import ProjectConfig
 
 
 DEEPPROFILER_MODES = ('off', 'export', 'full')
