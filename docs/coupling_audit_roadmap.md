@@ -1,14 +1,5 @@
 # 内聚耦合审查路线图
 
-<!--
-  English note: this is the reproducible audit roadmap for the cohesion/coupling
-  claims made about this tree.  The body is in Chinese because it was written for
-  and reviewed by a Chinese-speaking reviewer; every number in it is reproducible
-  with the commands it prints, and the two places where an earlier revision of
-  this document was wrong are marked "2026-10-07 更正" inline rather than quietly
-  edited out.
--->
-
 本路线图用于**独立复核**重构版相对官方源码在**内聚与耦合**上的变化。
 所有数字都可复现，不含主观判断。
 
@@ -322,8 +313,15 @@ git ls-remote https://github.com/liuzy0543-spec/cpc-promote-v2 refs/heads/main
 > # 期望（2026-10-07 基准）: 36fc4cde1ace9a0db9b1a054a645161da830f1a7
 > ```
 >
-> `src/cellpaint_pipeline` 子树在各提交间保持
-> `9d4ac260dba2c14f79306a086bdc1b0d119a2a47` 不变。
+> **两个子树哈希（2026-10-07 基准，三个提交点上完全不变）**：
+>
+> | 路径 | 哈希 |
+> |---|---|
+> | `src` | `9d4ac260dba2c14f79306a086bdc1b0d119a2a47` |
+> | `src/cellpaint_pipeline` | `857f36d6ae079eb3dcd9ee65ab639c7dad809e45` |
+>
+> ⚠️ 本行原写「`src/cellpaint_pipeline` 保持 `9d4ac260…`」，**路径张冠李戴** ——
+> `9d4ac260` 是 `src` 那一层的哈希。两个都列在这里。
 
 ### 4.3 网络不通时的替代核验（本次实测有效）
 
