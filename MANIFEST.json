@@ -1,0 +1,184 @@
+{
+  "release": "cpc-embedding-v1",
+  "profile": "v2",
+  "methods": [
+    {
+      "name": "deepprofiler",
+      "output_dim": 672,
+      "output_dim_per_channel": null,
+      "input_unit": "single_cell_crop",
+      "channels": [
+        "DNA",
+        "ER",
+        "RNA",
+        "AGP",
+        "Mito"
+      ],
+      "channel_count_fixed": true,
+      "spatial": [
+        32,
+        32
+      ],
+      "preprocess": {
+        "scale": "per_crop_minmax",
+        "value_range": [
+          0.0,
+          1.0
+        ],
+        "to_dtype": "float32",
+        "batch_layout": "BHWC",
+        "source_map": "per_crop_minmax_bhwc",
+        "mask_mode": "none",
+        "resize_policy": "refuse",
+        "input_encoding": "stack"
+      },
+      "weights": {
+        "source": "Cell_Painting_CNN_v1.hdf5",
+        "sha256": "87b756f579336d606fd3d387b04bd2d422f9d410e5635a5d6b2cda7615833e73",
+        "download": "https://zenodo.org/records/7114558/files/Cell_Painting_CNN_v1.hdf5?download=1",
+        "mirror": null,
+        "archive_member": null,
+        "provenance": "official"
+      },
+      "determinism": "deterministic",
+      "license": "BSD-3-Clause (code) / CC-BY-4.0 (weights)",
+      "requires": [
+        "tensorflow",
+        "efficientnet"
+      ],
+      "feature_layer": "block6a_activation",
+      "notes": "Embedding is the activation of block6a_activation reduced over the spatial axes by successive mean(axis=1); 672 is the channel count of block6a_bn, not the model output (ClassProb is 490-way). Default in this project is block6a_activation -> 672; the upstream default of pool5 -> 1280 is available via feature_layer."
+    },
+    {
+      "name": "ca_mae",
+      "output_dim": 384,
+      "output_dim_per_channel": 384,
+      "input_unit": "single_cell_crop",
+      "channels": [
+        "C0",
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "channel_count_fixed": false,
+      "spatial": [
+        256,
+        256
+      ],
+      "preprocess": {
+        "scale": "div255",
+        "value_range": [
+          0.0,
+          255.0
+        ],
+        "to_dtype": "uint8",
+        "batch_layout": "BCHW",
+        "source_map": "identity",
+        "mask_mode": "none",
+        "resize_policy": "auto",
+        "input_encoding": "stack"
+      },
+      "weights": {
+        "source": "openphenom_pkg/openphenom/model.safetensors",
+        "sha256": "f6e5f1c97101331b1574c9e4b99623260191c55eea5d98e40460849c0e4c4d47",
+        "download": "https://hf-mirror.com/recursionpharma/OpenPhenom/resolve/main/model.safetensors",
+        "mirror": "https://huggingface.co/recursionpharma/OpenPhenom/resolve/main/model.safetensors",
+        "archive_member": null,
+        "provenance": "official"
+      },
+      "determinism": "deterministic",
+      "license": "Recursion Non-Commercial EULA",
+      "requires": [
+        "torch",
+        "transformers",
+        "einops"
+      ],
+      "feature_layer": "encoder_pool",
+      "notes": "Variable channel count is supported: pass channel_names matching the array you supply. return_channelwise_embeddings=True yields 384*C. Embeddings are reported to need batch correction (PCA-CenterScale or TVN) before comparison."
+    },
+    {
+      "name": "cellclip",
+      "output_dim": 512,
+      "output_dim_per_channel": null,
+      "input_unit": "channel_embeddings",
+      "channels": [
+        "DNA",
+        "ER",
+        "RNA",
+        "AGP",
+        "Mito"
+      ],
+      "channel_count_fixed": true,
+      "spatial": null,
+      "preprocess": {
+        "scale": "none",
+        "value_range": null,
+        "to_dtype": "float32",
+        "batch_layout": "BCHW",
+        "source_map": null,
+        "mask_mode": "none",
+        "resize_policy": "auto",
+        "input_encoding": "stack"
+      },
+      "weights": {
+        "source": "cellclip/model.safetensors",
+        "sha256": "66c2d32a44a3e7d68deb489047df0df7676940308683b3285b1c8d28c471b550",
+        "download": "https://hf-mirror.com/suinleelab/CellCLIP/resolve/main/model.safetensors",
+        "mirror": "https://huggingface.co/suinleelab/CellCLIP/resolve/main/model.safetensors",
+        "archive_member": null,
+        "provenance": "official"
+      },
+      "determinism": "deterministic",
+      "license": "CC BY-NC-ND 4.0",
+      "requires": [
+        "torch"
+      ],
+      "feature_layer": "CrossChannelFormer CLS",
+      "notes": "The released checkpoint consumes precomputed per-channel DINOv2-Giant embeddings (5 x 1536), NOT images. Extracting those embeddings is a separate upstream stage requiring DINOv2-Giant, which is not bundled. The text tower (BERT) is inside the checkpoint but unused for image embedding."
+    },
+    {
+      "name": "o2vae",
+      "output_dim": 512,
+      "output_dim_per_channel": null,
+      "input_unit": "single_cell_crop",
+      "channels": [
+        "shape"
+      ],
+      "channel_count_fixed": true,
+      "spatial": [
+        64,
+        64
+      ],
+      "preprocess": {
+        "scale": "none",
+        "value_range": [
+          0.0,
+          1.0
+        ],
+        "to_dtype": "float32",
+        "batch_layout": "BCHW",
+        "source_map": "mask_to_silhouette",
+        "mask_mode": "none",
+        "resize_policy": "auto",
+        "input_encoding": "stack"
+      },
+      "weights": {
+        "source": "o2vae/o2vae_mefs_official.pt",
+        "sha256": "aa70cfa8b080c9d9989c11de316a2f7f074e8bef29366c4aaec24c807c5dfc0f",
+        "download": "https://zenodo.org/records/14988837/files/checkpoints.zip",
+        "mirror": null,
+        "archive_member": "checkpoints/o2vae_mefs_official.pt",
+        "provenance": "official"
+      },
+      "determinism": "deterministic",
+      "license": "MIT",
+      "requires": [
+        "torch",
+        "e2cnn"
+      ],
+      "feature_layer": "z_mu",
+      "notes": "Official MEF weights.  Paper: Burgess J, Nirschl JJ, Zanellati M-C, Lozano A, Cohen S, Yeung-Levy S. \"Orientation-invariant autoencoders learn robust representations for shape profiling of cells and organelles.\" Nature Communications 15, 1022 (2024), doi:10.1038/s41467-024-45362-4; code github.com/jmhb0/o2vae (Zenodo 10.5281/zenodo.10206848).  (\"mefs\" = Mouse Embryonic Fibroblasts.)  Input is a SINGLE-CHANNEL binary cell silhouette at 64x64 in [0,1] -- O2-VAE is a shape model, so for Cell Painting it consumes a mask derived from the DNA channel rather than 5-channel intensity.  That modality difference is inherent to the method, not a handling choice, and must be stated whenever it is compared against intensity models.  DOMAIN SHIFT WARNING: the official checkpoint was trained on CELL silhouettes (configs/config_mefs.py:19, data_dir=.../data/mefs/scaled/cell) and no separate nucleus checkpoint is published, so feeding it a NUCLEUS silhouette is out-of-domain inference and the embedding distribution does not match the training distribution.  Also note the paper text says \"embedding dimensions d = 128\" while the released checkpoint measures zdim=512 (q_net.fully_net.3.bias is (1024,)); the code and the weights are authoritative."
+    }
+  ]
+}

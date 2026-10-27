@@ -1,0 +1,5 @@
+numpy>=1.24
+# 深度学习框架按需装，见 README §1：
+#   tensorflow>=2.15 h5py          # deepprofiler
+#   torch>=2.0 transformers einops safetensors   # ca_mae / cellclip
+#   e2cnn                          # o2vae

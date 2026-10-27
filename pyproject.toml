@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpc-embedding-v1"
+version = "1.0.0"
+description = "Unified Cell Painting embedding interface (4 methods)"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
